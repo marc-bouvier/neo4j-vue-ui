@@ -264,7 +264,101 @@ curl -X POST http://localhost:7474/db/neo4j/tx/1/commit \
 {"results":[],"errors":[],"commit":"http://localhost:7474/db/neo4j/tx/1/commit"}
 ```
 
-# Neo4j in vuejs
+# Wrapping Neo4j REST API in vuejs
 
-- keep transaction open during new node view stuff
-- 
+```js
+function defaultHeaders() {
+    const headers = new Headers();
+    headers.append("Authorization", authHeader());
+    headers.append("Accept", "application/json;charset=UTF-8");
+    headers.append("Content-Type", "application/json;charset=UTF-8");
+    return headers;
+}
+
+function openTransaction(transactionRouteUrl) {
+    const headers = defaultHeaders();
+    const request = new Request(transactionRouteUrl, {
+        method: "POST",
+        body: '{"statements":[]}',
+        headers
+    });
+
+
+    return fetch(request)
+        .then(response => {
+            return response.json();
+        })
+        .then(data => {
+
+            const url = data.commit.split("/commit")[0]; // normally it's in reponse's location header, but for some reason I can't get this header's value with fetch()
+
+            return { commitUrl: data.commit, url }
+        })
+}
+
+function loadExistingNodeLabels(transactionUrl) {
+    const headers = defaultHeaders();
+
+    const request = new Request(transactionUrl, {
+        method: "POST",
+        body: JSON.stringify({
+            statements: [{ statement: "call db.labels()" }]
+        }),
+        headers
+    });
+
+    return fetch(request)
+        .then(response => {
+            console.log("labels response :", response);
+            return response.json();
+        })
+        .then(json => {
+            console.log("labels data :", json);
+            return json.results[0].data.map(it => it.row[0]);
+        });
+}
+```
+
+Usage sample
+
+```js
+import {openTransaction,loadExistingNodeLabels}  from  '../_services/neo4j.service'
+export default {
+  name: "NodeCreator",
+  props: {
+    msg: String
+  },
+  data() {
+    return {
+      neo4jConfig: { transactionRouteUrl: "http://localhost:7474/db/neo4j/tx" },
+      transaction: { commitUrl: null, url: null, running: false },
+      node: { isInCreation: false, existingLabels: [], selectedLabel: null }
+    };
+  },
+  methods: {
+    newNode() {
+      const component = this;
+      component.node.isInCreation = true;
+      openTransaction(this.neo4jConfig.transactionRouteUrl).then(({commitUrl,url}) => {
+        component.transaction.commitUrl = commitUrl
+        component.transaction.running=true
+        component.transaction.url=url
+        console.log("Transaction created : ", component.transaction.url);
+        
+        // fetch labels
+        loadExistingNodeLabels(component.transaction.url)
+        .then(data => {
+          component.node.existingLabels = data;
+        });
+      })
+      .catch(()=>{
+          component.transaction.running = true; // to refresh transaction while it is running
+          component.isInCreation=false
+      })
+    },
+    commitNode() {
+      // endTransaction
+    },
+  }
+};
+```
