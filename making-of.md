@@ -176,6 +176,7 @@ REST API entry points.
 
 https://neo4j.com/docs/http-api/current/
 
+https://neo4j.com/docs/http-api/current/actions/
 
 ```bash
 $ curl -X GET http://localhost:7474/ \
@@ -192,9 +193,10 @@ $ curl -X GET http://localhost:7474/ \
 
 Begin a transaction.
 
-https://neo4j.com/docs/http-api/current/actions/
 
 For example sake, we create it without statements. We could add multiple statements in the same transaction.
+
+You can also begin and end a transaction in one http request (http://localhost:7474/db/neo4j/tx/commit)
 
 ```bash
 curl -X POST http://localhost:7474/db/neo4j/tx \
