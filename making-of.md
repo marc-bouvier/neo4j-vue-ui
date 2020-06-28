@@ -167,3 +167,98 @@ export function authHeader() {
 }
 ```
 
+# Neo4j api call
+
+We assume that neo4j is running locally and accepts connections from other domains. Also that it is secured.
+We won't use https for now. 
+
+REST API entry points.
+
+https://neo4j.com/docs/http-api/current/
+
+
+```bash
+$ curl -X GET http://localhost:7474/ \
+  -H "Accept: application/json;charset=UTF-8" \
+  -H "Authorization: Basic bmVvNGo6ZWFlcWdoejY0"
+
+{
+  "bolt_routing" : "neo4j://localhost:7687",
+  "transaction" : "http://localhost:7474/db/{databaseName}/tx",
+  "bolt_direct" : "bolt://localhost:7687",
+  "neo4j_version" : "4.1.0",
+  "neo4j_edition" : "enterprise"
+```
+
+Begin a transaction.
+
+https://neo4j.com/docs/http-api/current/actions/
+
+For example sake, we create it without statements. We could add multiple statements in the same transaction.
+
+```bash
+curl -X POST http://localhost:7474/db/neo4j/tx \
+  -H "Accept: application/json;charset=UTF-8" \
+  -H "Authorization: Basic bmVvNGo6ZWFlcWdoejY0" \
+  -H "Content-Type: application/json;charset=utf-8" \
+  --data '{"statements":[]}' \
+  -v
+```
+
+A new transaction is created, without activity on it, it will be destroyed in 60sec.
+
+```
+< HTTP/1.1 201 Created
+< Date: Sun, 28 Jun 2020 16:08:57 GMT
+< Access-Control-Allow-Origin: *
+< Location: http://localhost:7474/db/neo4j/tx/1
+< Content-Type: application/json;charset=utf-8
+< Content-Length: 138
+< 
+* Connection #0 to host localhost left intact
+{"results":[],"errors":[],"commit":"http://localhost:7474/db/neo4j/tx/1/commit","transaction":{"expires":"Sun, 28 Jun 2020 16:09:57 GMT"}}
+```
+
+Location header gives us the URL of the created transaction : `http://localhost:7474/db/neo4j/tx/1` 
+
+```bash
+curl -X POST http://localhost:7474/db/neo4j/tx/1 \
+  -H "Accept: application/json;charset=UTF-8" \
+  -H "Authorization: Basic bmVvNGo6ZWFlcWdoejY0" \
+  -H "Content-Type: application/json;charset=utf-8" \
+  --data '{  "statements" : [ {    "statement" : "MATCH (n) RETURN n LIMIT 25"  } ]}' \
+  -v
+```
+
+```
+< HTTP/1.1 200 OK
+< Date: Sun, 28 Jun 2020 16:14:05 GMT
+< Access-Control-Allow-Origin: *
+< Content-Type: application/json;charset=utf-8
+< Content-Length: 1265
+< 
+{"results":[{"columns":["n"],"data":[{"row":[{"name":"Devenir freelance"}],"meta":[{"id":0,"type":"node","deleted":false}]},{"row":[{"date":"2020-06-27T14:29:57.283Z","name":"Situation Actuelle"}],"meta":[{"id":1,"type":"node","deleted":false}]},{"row":[{"name":"Inconnues","unknown":true}],"meta":[{"id":2,"type":"node","deleted":false}]},{"row":[{"name":"TDAH"}],"meta":[{"id":3,"type":"node","deleted":false}]},{"row":[{"name":"Motivation"}],"meta":[{"id":4,"type":"node","deleted":false}]},{"row":[{"name":"Santé mentale"}],"meta":[{"id":5,"type":"node","deleted":false}]},{"row":[{"name":"Confiance en soi"}],"meta":[{"id":6,"type":"node","deleted":false}]},{"row":[{"name":"Affirmation de soi"}],"meta":[{"id":7,"type":"node","deleted":false}]},{"row":[{"name":"Marc"}],"meta":[{"id":8,"type":"node","deleted":false}]},{"row":[{"name":"Technical"}],"meta":[{"id":9,"type":"node","deleted":false}]},{"row":[{"name":"Soft-skill"}],"meta":[{"id":10,"type":"node","deleted":false}]},{"row":[{"name":"Java"}],"meta":[{"id"* Connection #0 to host localhost left intact
+:11,"type":"node","deleted":false}]},{"row":[{"name":"Java 7"}],"meta":[{"id":12,"type":"node","deleted":false}]}]}],"errors":[],"commit":"http://localhost:7474/db/neo4j/tx/1/commit","transaction":{"expires":"Sun, 28 Jun 2020 16:15:05 GMT"}}
+```
+
+
+```bash
+curl -X POST http://localhost:7474/db/neo4j/tx/1/commit \
+  -H "Accept: application/json;charset=UTF-8" \
+  -H "Authorization: Basic bmVvNGo6ZWFlcWdoejY0" \
+  -H "Content-Type: application/json;charset=utf-8" \
+  --data '{  "statements" : []}' \
+  -v
+```
+
+```
+< HTTP/1.1 200 OK
+< Date: Sun, 28 Jun 2020 16:16:23 GMT
+< Access-Control-Allow-Origin: *
+< Content-Type: application/json;charset=utf-8
+< Content-Length: 80
+< 
+* Connection #0 to host localhost left intact
+{"results":[],"errors":[],"commit":"http://localhost:7474/db/neo4j/tx/1/commit"}
+```
+
