@@ -264,3 +264,7 @@ curl -X POST http://localhost:7474/db/neo4j/tx/1/commit \
 {"results":[],"errors":[],"commit":"http://localhost:7474/db/neo4j/tx/1/commit"}
 ```
 
+# Neo4j in vuejs
+
+- keep transaction open during new node view stuff
+- 
